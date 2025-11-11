@@ -1,3 +1,6 @@
+---
+alwaysApply: true
+---
 #### GitFlow Best Practices
 
 Copy the following GitFlow commands into a `.gitflow_rules` file in your Cursor project root. This serves as a quick reference for professional Git workflows:
