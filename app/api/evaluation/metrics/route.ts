@@ -1,61 +1,93 @@
 /**
  * API Route: /api/evaluation/metrics
- * Serves RAGAS evaluation metrics from the backend repository
+ * Serves RAGAS evaluation metrics from HuggingFace datasets
  */
 
-import { NextResponse } from "next/server";
-import fs from "fs/promises";
-import path from "path";
+import { NextResponse } from "next/server"
+import { fetchHFDataset, normalizeRetrieverName, average } from "@/lib/huggingface"
 
-// Path to backend repository (sibling directory)
-const BACKEND_PATH = path.join(
-  process.cwd(),
-  "../gdelt-knowledge-base/deliverables/evaluation_evidence"
-);
+const METRICS_DATASET = "dwb2023/gdelt-rag-evaluation-metrics"
+
+// Static manifest metadata (from HuggingFace dataset README/metadata)
+const MANIFEST = {
+  generated_at: "2025-01-13T00:00:00Z",
+  llm: {
+    model: "gpt-4o-mini",
+    temperature: 0,
+  },
+  embeddings: {
+    model: "text-embedding-3-small",
+    dimensions: 1536,
+  },
+  retrievers: ["naive", "bm25", "ensemble", "cohere_rerank"],
+  evaluation: {
+    golden_testset_size: 48,
+    source_dataset_size: 24,
+  },
+  data_provenance: {
+    sources_sha256: "c39263dea5cf001f18b36e7c7c7273f4f4f4134240e288fb3256dc72b193a5fa",
+    golden_testset_sha256: "e410c99a1c9e37a2650ced20e11342a2324cc55132b2e1b53e5757c7e4fbe176",
+  },
+}
 
 export async function GET() {
   try {
-    // Read the comparative results CSV
-    const csvPath = path.join(BACKEND_PATH, "comparative_ragas_results.csv");
-    const csvContent = await fs.readFile(csvPath, "utf-8");
+    // Fetch evaluation records from HuggingFace Dataset Viewer API
+    const data = await fetchHFDataset(METRICS_DATASET, 'default', 'train', 0, 100)
 
-    // Parse CSV (skip header, split by newlines)
-    const lines = csvContent.trim().split("\n");
-    const headers = lines[0].split(",");
+    // Group by retriever and aggregate metrics
+    const grouped = new Map<string, {
+      faithfulness: number[]
+      answer_relevancy: number[]
+      context_precision: number[]
+      context_recall: number[]
+    }>()
 
-    const metrics = lines.slice(1).map((line) => {
-      const values = line.split(",");
+    data.rows.forEach(({ row }) => {
+      const retriever = normalizeRetrieverName(row.retriever)
+
+      if (!grouped.has(retriever)) {
+        grouped.set(retriever, {
+          faithfulness: [],
+          answer_relevancy: [],
+          context_precision: [],
+          context_recall: [],
+        })
+      }
+
+      const group = grouped.get(retriever)!
+      group.faithfulness.push(row.faithfulness || 0)
+      group.answer_relevancy.push(row.answer_relevancy || 0)
+      group.context_precision.push(row.context_precision || 0)
+      group.context_recall.push(row.context_recall || 0)
+    })
+
+    // Calculate average metrics per retriever
+    const metrics = Array.from(grouped.entries()).map(([retriever, scores]) => {
+      const faithfulness = average(scores.faithfulness)
+      const answer_relevancy = average(scores.answer_relevancy)
+      const context_precision = average(scores.context_precision)
+      const context_recall = average(scores.context_recall)
+
       return {
-        retriever: values[0],
-        faithfulness: parseFloat(values[1]),
-        answer_relevancy: parseFloat(values[2]),
-        context_precision: parseFloat(values[3]),
-        context_recall: parseFloat(values[4]),
-        average: parseFloat(values[5]),
-      };
-    });
-
-    // Read the RUN_MANIFEST for metadata
-    const manifestPath = path.join(BACKEND_PATH, "RUN_MANIFEST.json");
-    const manifestContent = await fs.readFile(manifestPath, "utf-8");
-    const manifest = JSON.parse(manifestContent);
+        retriever,
+        faithfulness,
+        answer_relevancy,
+        context_precision,
+        context_recall,
+        average: average([faithfulness, answer_relevancy, context_precision, context_recall]),
+      }
+    })
 
     return NextResponse.json({
       metrics,
-      manifest: {
-        generated_at: manifest.generated_at,
-        llm: manifest.llm,
-        embeddings: manifest.embeddings,
-        retrievers: manifest.retrievers,
-        evaluation: manifest.evaluation,
-        data_provenance: manifest.data_provenance,
-      },
-    });
+      manifest: MANIFEST,
+    })
   } catch (error) {
-    console.error("Error reading evaluation metrics:", error);
+    console.error("Error fetching evaluation metrics from HuggingFace:", error)
     return NextResponse.json(
-      { error: "Failed to load evaluation metrics" },
+      { error: "Failed to load evaluation metrics from HuggingFace" },
       { status: 500 }
-    );
+    )
   }
 }
