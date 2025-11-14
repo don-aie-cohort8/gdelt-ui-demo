@@ -3,7 +3,7 @@ import { promises as fs } from "fs"
 import path from "path"
 import Papa from "papaparse"
 
-const BACKEND_PATH = path.join(process.cwd(), "..", "gdelt-knowledge-base", "deliverables", "evaluation_evidence")
+const DATA_PATH = path.join(process.cwd(), "public", "data", "evaluation")
 
 const VALID_RETRIEVERS = ["naive", "bm25", "ensemble", "cohere_rerank"]
 
@@ -112,7 +112,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ retr
     }
 
     // Read CSV file
-    const csvPath = path.join(BACKEND_PATH, `${retriever}_detailed_results.csv`)
+    const csvPath = path.join(DATA_PATH, `${retriever}_detailed_results.csv`)
 
     let csvContent: string
     try {

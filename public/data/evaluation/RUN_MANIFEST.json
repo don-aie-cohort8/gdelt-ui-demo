@@ -1,0 +1,100 @@
+{
+  "ragas_version": "0.2.10",
+  "python_version": "3.11",
+  "llm": {
+    "model": "gpt-4.1-mini",
+    "temperature": 0,
+    "provider": "openai",
+    "purpose": "RAG generation and RAGAS evaluation"
+  },
+  "embeddings": {
+    "model": "text-embedding-3-small",
+    "dimensions": 1536,
+    "provider": "openai",
+    "purpose": "Document and query embeddings"
+  },
+  "retrievers": [
+    {
+      "name": "naive",
+      "type": "dense_vector_search",
+      "description": "Baseline dense vector search with OpenAI embeddings",
+      "k": 5,
+      "distance_metric": "cosine",
+      "rerank": false
+    },
+    {
+      "name": "bm25",
+      "type": "sparse_keyword",
+      "description": "BM25 sparse keyword matching (lexical)",
+      "k": 5,
+      "rerank": false
+    },
+    {
+      "name": "cohere_rerank",
+      "type": "contextual_compression",
+      "description": "Cohere rerank-v3.5 with contextual compression",
+      "initial_k": 20,
+      "top_n": 3,
+      "rerank_model": "rerank-v3.5",
+      "rerank_provider": "cohere",
+      "rerank": true
+    },
+    {
+      "name": "ensemble",
+      "type": "hybrid",
+      "description": "Ensemble combining dense vector + sparse keyword",
+      "dense_k": 5,
+      "sparse_k": 5,
+      "weights": [
+        0.5,
+        0.5
+      ],
+      "components": [
+        "naive_dense",
+        "bm25_sparse"
+      ],
+      "rerank": false
+    }
+  ],
+  "evaluation": {
+    "golden_testset": "dwb2023/gdelt-rag-golden-testset",
+    "golden_testset_size": 12,
+    "source_dataset": "dwb2023/gdelt-rag-sources",
+    "source_dataset_size": 38,
+    "metrics": [
+      "faithfulness",
+      "answer_relevancy",
+      "context_precision",
+      "context_recall"
+    ],
+    "timeout_seconds": 360,
+    "ragas_run_config": {
+      "timeout": 360,
+      "max_workers": 4
+    }
+  },
+  "vector_store": {
+    "type": "qdrant",
+    "collection_name": "gdelt_comparative_eval",
+    "host": "localhost",
+    "port": 6333,
+    "distance": "cosine",
+    "vector_size": 1536
+  },
+  "skipped": [],
+  "notes": [
+    "All LLM calls use temperature=0 for determinism",
+    "Fine-tuned embeddings out of scope per instructor guidance",
+    "Evaluation follows RAGAS 0.2.10 API patterns from session08"
+  ],
+  "generated_at": "2025-11-02T00:11:34.138675Z",
+  "generated_by": "scripts/generate_run_manifest.py",
+  "data_provenance": {
+    "ingest_manifest_id": "ragas_pipeline_f4df656e-997e-4830-ab75-dc15fa57621c",
+    "ingest_timestamp": "2025-11-01T23:59:54.594112Z",
+    "sources_sha256": "c39263dea5cf001f18b36e7c7c7273f4f4f4134240e288fb3256dc72b193a5fa",
+    "golden_testset_sha256": "e410c99a1c9e37a2650ced20e11342a2324cc55132b2e1b53e5757c7e4fbe176",
+    "source_pdfs_count": "all",
+    "ragas_testset_size": 10
+  }
+}

@@ -7,16 +7,16 @@ import { NextResponse } from "next/server";
 import fs from "fs/promises";
 import path from "path";
 
-// Path to backend repository (sibling directory)
-const BACKEND_PATH = path.join(
+// Path to bundled data files in public directory
+const DATA_PATH = path.join(
   process.cwd(),
-  "../gdelt-knowledge-base/deliverables/evaluation_evidence"
+  "public/data/evaluation"
 );
 
 export async function GET() {
   try {
     // Read the comparative results CSV
-    const csvPath = path.join(BACKEND_PATH, "comparative_ragas_results.csv");
+    const csvPath = path.join(DATA_PATH, "comparative_ragas_results.csv");
     const csvContent = await fs.readFile(csvPath, "utf-8");
 
     // Parse CSV (skip header, split by newlines)
@@ -36,7 +36,7 @@ export async function GET() {
     });
 
     // Read the RUN_MANIFEST for metadata
-    const manifestPath = path.join(BACKEND_PATH, "RUN_MANIFEST.json");
+    const manifestPath = path.join(DATA_PATH, "RUN_MANIFEST.json");
     const manifestContent = await fs.readFile(manifestPath, "utf-8");
     const manifest = JSON.parse(manifestContent);
 
