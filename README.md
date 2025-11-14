@@ -1,20 +1,47 @@
 # GDELT Knowledge Graph RAG Assistant
 
-An interactive frontend for exploring and explaining the `gdelt-knowledge-base` project. Query GDELT documentation, explore datasets, analyze retrieval performance, and understand the multi-layer architecture powering intelligent information retrieval.
+An interactive Next.js frontend for exploring and explaining the [`gdelt-knowledge-base`](https://github.com/aie8-cert-challenge/gdelt-knowledge-base) project. Query GDELT documentation with AI-powered retrieval, explore evaluation metrics, analyze datasets, and understand the multi-layer RAG architecture.
 
-## Features
+## 🎯 Features
 
-- **Query Console**: Ask questions about GDELT docs, pipelines, and datasets with AI-powered retrieval
-- **Evaluation Metrics**: Compare retriever strategies using RAGAS (faithfulness, relevancy, precision, and recall)
-- **Dataset Explorer**: Browse Hugging Face datasets with full provenance tracking via ingestion manifests
-- **Architecture Documentation**: Explore the 5-layer architecture (Config, Data, Retrieval, Orchestration, Execution)
+### **Live Query Console** (`/query`)
+- Submit natural language questions about GDELT documentation
+- Real-time AI responses via LangGraph Server (GPT-4.1-mini)
+- Retrieved context documents with relevance scores and metadata
+- Query history with localStorage persistence (last 10 queries)
+- Toast notifications for success/error feedback
 
-## Prerequisites
+### **Evaluation Dashboard** (`/evaluation`)
+- Real RAGAS metrics (Faithfulness, Relevancy, Precision, Recall)
+- Retriever comparison table across 4 strategies
+- Interactive bar charts and radar visualizations (Recharts)
+- SHA-256 data provenance fingerprints
+- Model configuration details (LLM, embeddings, vector store)
 
-Before you begin, ensure you have the following installed:
+### **Dataset Explorer** (`/datasets`)
+- 4 Hugging Face datasets with live metadata
+- Direct links to HF dataset pages
+- Ingestion manifest with environment tracking
+- SHA-256 fingerprint verification
+- Data lineage visualization
 
+### **Architecture Documentation** (`/architecture`)
+- 5-layer architecture breakdown
+- Module inventory with descriptions
+- Design patterns (Factory, Singleton, Strategy)
+
+## 📋 Prerequisites
+
+### Frontend Requirements
 - **Node.js** 18.x or later ([Download](https://nodejs.org/))
 - **npm**, **yarn**, **pnpm**, or **bun** package manager
+
+### Backend Requirements (for full functionality)
+- **Python** 3.11+
+- **[`gdelt-knowledge-base`](https://github.com/aie8-cert-challenge/gdelt-knowledge-base)** repository cloned as sibling directory
+- **LangGraph Server** running on port 2024
+- **OpenAI API Key** (required for queries)
+- **Cohere API Key** (optional, for reranking)
 
 ## Getting Started
 
@@ -100,15 +127,68 @@ gdelt-ui-demo/
 └── package.json            # Dependencies and scripts
 ```
 
-## Tech Stack
+## 🔌 API Integration
 
-- **Framework**: Next.js 16.0.0 (App Router)
-- **Language**: TypeScript
+### Backend API Endpoints
+
+The UI integrates with two types of endpoints:
+
+#### 1. LangGraph Server API (port 2024)
+Used for live query processing:
+
+```
+POST http://localhost:2024/threads          - Create conversation thread
+POST http://localhost:2024/threads/{id}/runs/wait  - Execute query (synchronous)
+GET  http://localhost:2024/ok               - Health check
+```
+
+#### 2. Next.js API Routes (internal)
+Used for serving evaluation and dataset data:
+
+```
+GET /api/evaluation/metrics    - RAGAS metrics from backend CSV
+GET /api/datasets/manifest     - Ingestion manifest from backend
+GET /api/datasets/info         - Hugging Face dataset metadata
+```
+
+### Data Sources
+
+- **Query responses**: LangGraph Server → Direct HTTP calls
+- **Evaluation metrics**: `../gdelt-knowledge-base/deliverables/evaluation_evidence/comparative_ragas_results.csv`
+- **Dataset manifest**: `../gdelt-knowledge-base/data/interim/manifest.json`
+
+### Environment Variables
+
+Create `.env.local` (already configured by default):
+
+```bash
+# Backend API endpoint
+NEXT_PUBLIC_API_BASE_URL=http://localhost:2024
+
+# Request timeout (milliseconds)
+NEXT_PUBLIC_API_TIMEOUT=30000
+```
+
+## 🛠️ Tech Stack
+
+### Frontend
+- **Framework**: Next.js 16.0.0 (App Router, React 19)
+- **Language**: TypeScript (strict mode, ES2017 target)
 - **Styling**: Tailwind CSS 4.x
-- **UI Components**: Radix UI + shadcn/ui
+- **UI Components**: Radix UI primitives via shadcn/ui
 - **Icons**: Lucide React
-- **Charts**: Recharts
+- **Charts**: Recharts (bar charts, radar charts)
 - **Forms**: React Hook Form + Zod validation
+- **Notifications**: Sonner (toast notifications)
+- **Error Handling**: React Error Boundary
+
+### Backend
+- **Framework**: LangGraph 0.6.7 + LangChain 0.3.19
+- **LLM**: OpenAI GPT-4.1-mini (temperature=0)
+- **Embeddings**: text-embedding-3-small (1536 dims)
+- **Vector Store**: Qdrant (cosine distance)
+- **Retrieval**: 4 strategies (naive, BM25, ensemble, cohere_rerank)
+- **Evaluation**: RAGAS 0.2.10 (pinned)
 
 ## Available Scripts
 
