@@ -38,7 +38,7 @@ const docLinks = [
     title: "RAGAS Evaluation",
     description: "Guide to evaluation metrics and interpretation",
     icon: FileText,
-    href: "https://github.com/aie8-cert-challenge/gdelt-knowledge-base/blob/main/docs/deliverables.md",
+    href: "https://github.com/aie8-cert-challenge/gdelt-knowledge-base/tree/main?tab=readme-ov-file#-evaluation-results-summary",
     external: true,
   },
   {
