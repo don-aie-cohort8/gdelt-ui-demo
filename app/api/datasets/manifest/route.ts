@@ -7,15 +7,15 @@ import { NextResponse } from "next/server";
 import fs from "fs/promises";
 import path from "path";
 
-// Path to bundled data files in public directory
-const DATA_PATH = path.join(
+// Path to backend repository (sibling directory)
+const BACKEND_PATH = path.join(
   process.cwd(),
-  "public/data/datasets"
+  "../gdelt-knowledge-base/data/interim"
 );
 
 export async function GET() {
   try {
-    const manifestPath = path.join(DATA_PATH, "manifest.json");
+    const manifestPath = path.join(BACKEND_PATH, "manifest.json");
     const content = await fs.readFile(manifestPath, "utf-8");
     const manifest = JSON.parse(content);
 

@@ -323,7 +323,7 @@ healthCheck()            // Verify backend status
 - `cohere_rerank` - Ensemble + Cohere reranking (best performance)
 
 ### Next.js API Routes (Internal)
-These routes serve static evaluation and dataset data bundled within the frontend repository:
+These routes serve static evaluation and dataset data from the backend repository:
 
 ```bash
 GET /api/evaluation/metrics              # RAGAS summary metrics
@@ -333,12 +333,10 @@ GET /api/datasets/info                   # Hugging Face metadata
 ```
 
 **Data Sources**:
-- Data path: `public/data/` (bundled in frontend repo)
-- Evaluation data: `public/data/evaluation/*.csv`
-- Manifest: `public/data/datasets/manifest.json`
+- Backend path: `../gdelt-knowledge-base/` (sibling directory)
+- Evaluation data: `deliverables/evaluation_evidence/*.csv`
+- Manifest: `data/interim/manifest.json`
 - Parsed with `papaparse` library
-
-**Note**: Data files are copied from `gdelt-knowledge-base` and bundled into this repo for self-contained Vercel deployment. This ensures the frontend works independently without requiring access to sibling directories.
 
 ### Data Normalization Pattern
 When bridging CSV data to API endpoints, normalize names:
@@ -430,24 +428,17 @@ Use Playwright browser testing to discover actual build errors.
 const normalized = retrieverName.toLowerCase().replace(/ /g, "_")
 ```
 
-### Data Update Workflow
+### Missing Sibling Directory
 
-When evaluation data or datasets are updated in `gdelt-knowledge-base`:
+If evaluation/dataset pages fail to load:
 
 ```bash
-# Copy updated evaluation data
-cp ../gdelt-knowledge-base/deliverables/evaluation_evidence/*.csv public/data/evaluation/
-cp ../gdelt-knowledge-base/deliverables/evaluation_evidence/RUN_MANIFEST.json public/data/evaluation/
-
-# Copy updated manifest
-cp ../gdelt-knowledge-base/data/interim/manifest.json public/data/datasets/
-
-# Commit and deploy
-git add public/data/
-git commit -m "chore: Update evaluation data from backend"
+# Check backend repository exists as sibling
+ls ../gdelt-knowledge-base/deliverables/evaluation_evidence/
+ls ../gdelt-knowledge-base/data/interim/manifest.json
 ```
 
-Note: Data files are bundled in the frontend repo, not read from sibling directories.
+API routes expect the backend at `../gdelt-knowledge-base/` relative to this project.
 
 ### LangGraph Server Not Running
 
@@ -470,23 +461,14 @@ This UI is the frontend for `gdelt-knowledge-base`, which implements:
 
 The UI provides visualization and interaction with that backend system.
 
-**Deployment Architecture**:
-```
-gdelt-ui-demo/               # Frontend (this repo - self-contained)
-├── public/data/             # Bundled evaluation data
-│   ├── evaluation/          # CSV files from backend
-│   └── datasets/            # manifest.json from backend
-└── app/api/*/route.ts       # Reads from public/data/
-```
-
-For local development with the backend:
+**Repository Structure Assumption**:
 ```
 parent-directory/
 ├── gdelt-knowledge-base/    # Backend (Python, LangGraph)
-│   ├── deliverables/evaluation_evidence/*.csv
+│   ├── deliverables/
+│   │   └── evaluation_evidence/*.csv
 │   ├── data/interim/manifest.json
-│   └── langgraph.json (port 2024)
-└── gdelt-ui-demo/           # Frontend
-    ├── public/data/         # Bundled data (synced from backend)
-    └── lib/api-client.ts    # Connects to backend:2024 for queries
+│   └── langgraph.json
+└── gdelt-ui-demo/           # Frontend (this repo)
+    └── app/api/*/route.ts   # Reads from ../gdelt-knowledge-base/
 ```
