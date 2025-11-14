@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { BarChart3, TrendingUp, Loader2, AlertCircle, Calendar, Cpu, Database } from "lucide-react"
+import { BarChart3, TrendingUp, Loader2, AlertCircle, Calendar, Cpu, Database, Info } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { SidebarProvider } from "@/components/ui/sidebar"
@@ -10,8 +10,41 @@ import { TopNav } from "@/components/top-nav"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from "recharts"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from "recharts"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { DetailedResultsModal } from "@/components/detailed-results-modal"
+
+// Metric definitions for tooltips
+const METRIC_DEFINITIONS = {
+  faithfulness: {
+    name: "Faithfulness",
+    shortDesc: "Answer accuracy to retrieved context",
+    fullDesc: "Measures how accurately the generated answer reflects the retrieved context. Ensures responses don't contain hallucinations or information not present in the source material.",
+    idealRange: "≥95% (Excellent), 85-95% (Good), <85% (Needs Improvement)",
+    why: "Critical for trustworthy RAG systems - prevents AI from making up facts"
+  },
+  answer_relevancy: {
+    name: "Answer Relevancy",
+    shortDesc: "Response alignment to user query",
+    fullDesc: "Evaluates how well the generated response addresses the original question. Ensures answers are focused and don't include unnecessary information.",
+    idealRange: "≥95% (Excellent), 85-95% (Good), <85% (Needs Improvement)",
+    why: "Ensures users get exactly what they asked for, not tangential information"
+  },
+  context_precision: {
+    name: "Context Precision",
+    shortDesc: "Quality of retrieved content",
+    fullDesc: "Measures the proportion of retrieved chunks that are actually relevant to the query. Higher precision means less noise in retrieved context.",
+    idealRange: "≥90% (Excellent), 80-90% (Good), <80% (Needs Improvement)",
+    why: "Reduces wasted tokens and improves answer quality by filtering out irrelevant context"
+  },
+  context_recall: {
+    name: "Context Recall",
+    shortDesc: "Completeness of information retrieval",
+    fullDesc: "Measures whether all necessary information was retrieved from the knowledge base. High recall means comprehensive answers with no missing critical details.",
+    idealRange: "≥98% (Excellent), 90-98% (Good), <90% (Needs Improvement)",
+    why: "Ensures complete answers - critical for tasks requiring full context"
+  }
+}
 
 interface EvaluationData {
   metrics: Array<{
@@ -131,37 +164,83 @@ export default function EvaluationPage() {
         <AppSidebar />
         <div className="flex flex-1 flex-col">
           <TopNav />
-          <main className="flex-1 p-6">
-            <div className="mb-6 space-y-2">
-              <h1 className="text-3xl font-bold tracking-tight">Evaluation Dashboard</h1>
-              <p className="text-muted-foreground">RAGAS metrics and retriever performance comparisons</p>
-            </div>
+          <TooltipProvider>
+            <main className="flex-1 p-6">
+              <div className="mb-6 space-y-2">
+                <h1 className="text-3xl font-bold tracking-tight">Evaluation Dashboard</h1>
+                <p className="text-muted-foreground">RAGAS metrics and retriever performance comparisons</p>
+              </div>
 
-            {/* Key Metrics */}
-            <div className="mb-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-              {[
-                { name: "Faithfulness", value: avgMetrics.faithfulness, description: "Answer accuracy to retrieved context" },
-                { name: "Answer Relevancy", value: avgMetrics.answer_relevancy, description: "Response alignment to user query" },
-                { name: "Context Precision", value: avgMetrics.context_precision, description: "Quality of retrieved content" },
-                { name: "Context Recall", value: avgMetrics.context_recall, description: "Completeness of information retrieval" },
-              ].map((metric, i) => (
-                <Card key={i} className="border-border/50 bg-card/50">
-                  <CardHeader className="pb-3">
-                    <CardDescription className="text-xs">{metric.description}</CardDescription>
-                    <CardTitle className="text-2xl font-bold">{(metric.value * 100).toFixed(0)}%</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-medium text-foreground">{metric.name}</span>
-                        <span className="text-muted-foreground">{metric.value.toFixed(4)}</span>
-                      </div>
-                      <Progress value={metric.value * 100} className="h-2" />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+              {/* Key Metrics */}
+              <div className="mb-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                {[
+                  { key: "faithfulness", name: "Faithfulness", value: avgMetrics.faithfulness },
+                  { key: "answer_relevancy", name: "Answer Relevancy", value: avgMetrics.answer_relevancy },
+                  { key: "context_precision", name: "Context Precision", value: avgMetrics.context_precision },
+                  { key: "context_recall", name: "Context Recall", value: avgMetrics.context_recall },
+                ].map((metric) => {
+                  const def = METRIC_DEFINITIONS[metric.key as keyof typeof METRIC_DEFINITIONS]
+                  return (
+                    <Card key={metric.key} className="border-border/50 bg-card/50">
+                      <CardHeader className="pb-3">
+                        <CardDescription className="text-xs">{def.shortDesc}</CardDescription>
+                        <div className="flex items-center gap-2">
+                          <CardTitle className="text-2xl font-bold">{(metric.value * 100).toFixed(0)}%</CardTitle>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help transition-colors" />
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs space-y-2" side="right">
+                              <div>
+                                <h4 className="font-semibold text-sm mb-1">{def.name}</h4>
+                                <p className="text-xs text-muted-foreground">{def.fullDesc}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs font-medium">Ideal Range:</p>
+                                <p className="text-xs text-muted-foreground">{def.idealRange}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs font-medium">Why It Matters:</p>
+                                <p className="text-xs text-muted-foreground">{def.why}</p>
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-medium text-foreground">{metric.name}</span>
+                            <span className="text-muted-foreground">{(metric.value * 100).toFixed(1)}%</span>
+                          </div>
+                          <Progress value={metric.value * 100} className="h-2" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+              </div>
+
+              {/* Threshold Legend */}
+              <Card className="mb-6 border-border/50 bg-muted/30">
+                <CardContent className="py-4">
+                  <div className="flex flex-wrap items-center gap-3 text-xs">
+                    <span className="font-medium text-foreground">Score Guide:</span>
+                    <Badge className="bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30">
+                      🟢 Excellent ≥95%
+                    </Badge>
+                    <Badge className="bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/30">
+                      🟡 Good 85-95%
+                    </Badge>
+                    <Badge className="bg-red-500/20 text-red-700 dark:text-red-400 border-red-500/30">
+                      🔴 Below Target &lt;85%
+                    </Badge>
+                    <span className="text-muted-foreground ml-auto">
+                      Hover over metric names for detailed explanations
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
 
             {/* Comparison Table */}
             <Card className="border-border/50 bg-card/50">
@@ -181,7 +260,7 @@ export default function EvaluationPage() {
                       <TableHead className="text-right">Relevancy</TableHead>
                       <TableHead className="text-right">Precision</TableHead>
                       <TableHead className="text-right">Recall</TableHead>
-                      <TableHead className="text-right">Latency</TableHead>
+                      <TableHead className="text-right">Overall Score</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -208,22 +287,22 @@ export default function EvaluationPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           <span className={row.faithfulness >= 0.94 ? "text-primary font-medium" : ""}>
-                            {row.faithfulness.toFixed(4)}
+                            {(row.faithfulness * 100).toFixed(1)}%
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
                           <span className={row.answer_relevancy >= 0.95 ? "text-primary font-medium" : ""}>
-                            {row.answer_relevancy.toFixed(4)}
+                            {(row.answer_relevancy * 100).toFixed(1)}%
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
                           <span className={row.context_precision >= 0.90 ? "text-primary font-medium" : ""}>
-                            {row.context_precision.toFixed(4)}
+                            {(row.context_precision * 100).toFixed(1)}%
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
                           <span className={row.context_recall >= 0.98 ? "text-primary font-medium" : ""}>
-                            {row.context_recall.toFixed(4)}
+                            {(row.context_recall * 100).toFixed(1)}%
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
@@ -381,7 +460,7 @@ export default function EvaluationPage() {
                       <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                       <XAxis dataKey="name" className="text-xs fill-muted-foreground" angle={-15} textAnchor="end" height={60} />
                       <YAxis className="text-xs fill-muted-foreground" domain={[70, 100]} />
-                      <Tooltip
+                      <RechartsTooltip
                         contentStyle={{
                           backgroundColor: "hsl(var(--card))",
                           border: "1px solid hsl(var(--border))",
@@ -438,6 +517,7 @@ export default function EvaluationPage() {
               </Card>
             </div>
           </main>
+          </TooltipProvider>
         </div>
       </div>
 

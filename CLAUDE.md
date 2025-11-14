@@ -82,11 +82,14 @@ This affects all files in `app/api/*/[param]/route.ts`.
 
 ```
 components/
-├── ui/               # shadcn/ui components (17 components)
+├── ui/               # shadcn/ui components (19 components)
 │                    # Generated via shadcn CLI, customizable primitives
 ├── app-sidebar.tsx  # Main navigation sidebar with route awareness
 └── top-nav.tsx      # Top navigation bar
 ```
+
+**Installed UI Components** (19):
+accordion, badge, button, card, dialog, hover-card, input, label, progress, scroll-area, select, separator, sheet, sidebar, skeleton, table, textarea, toaster, tooltip
 
 ### Import Path Resolution
 
@@ -108,6 +111,29 @@ Configured in `tsconfig.json` paths.
 - Dark mode enforced via `className="dark"` on `<html>` element (app/layout.tsx:39)
 - Component variants managed via class-variance-authority
 - No CSS modules or styled-components
+
+### Client-Side State Management
+
+**localStorage Patterns**:
+
+The query console (`app/query/page.tsx`) persists query history using localStorage:
+
+```typescript
+// Persist last 10 queries
+const HISTORY_KEY = "gdelt-query-history"
+const MAX_HISTORY = 10
+
+// Save after successful query
+localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(-10)))
+
+// Load on component mount
+useEffect(() => {
+  const saved = localStorage.getItem(HISTORY_KEY)
+  if (saved) setHistory(JSON.parse(saved))
+}, [])
+```
+
+**Important**: Use `useEffect` to access localStorage (client-side only). Server components cannot access browser APIs.
 
 ## Code Conventions (from .cursor/rules/)
 
@@ -195,9 +221,6 @@ The shadcn CLI:
 - Configures imports via `@/components/ui/...` alias
 - Style configuration from `components.json` (new-york style, CSS variables)
 
-**Current Components** (17 installed):
-accordion, alert-dialog, aspect-ratio, avatar, badge, button, card, checkbox, collapsible, context-menu, dialog, dropdown-menu, hover-card, label, menubar, navigation-menu, popover, progress, radio-group, scroll-area, select, separator, sidebar, slider, switch, tabs, textarea, toast, toggle, toggle-group, tooltip
-
 When adding new UI components, use the shadcn CLI and import with `@/components/ui/...` alias.
 
 ## Testing and Validation
@@ -229,6 +252,47 @@ mcp__playwright__browser_take_screenshot({ filename: "validation.png" })
 
 Screenshots saved to `.playwright-mcp/` directory.
 
+## Environment Configuration
+
+### Environment Variables
+
+The project uses `.env.local` for configuration (already configured by default):
+
+```bash
+# Backend API endpoint (LangGraph Server)
+NEXT_PUBLIC_API_BASE_URL=http://localhost:2024
+
+# Request timeout in milliseconds
+NEXT_PUBLIC_API_TIMEOUT=30000
+
+# Optional: LangSmith Tracing (requires backend configuration)
+# NEXT_PUBLIC_LANGSMITH_TRACING=false
+# NEXT_PUBLIC_LANGSMITH_PROJECT=gdelt-knowledge-base
+```
+
+**Key Points**:
+- Variables prefixed with `NEXT_PUBLIC_` are exposed to the browser
+- Used in `lib/api-client.ts` for backend communication
+- Defaults work for local development; override for production
+
+### TypeScript Configuration
+
+- **Target**: ES2017 (conservative for broad browser support)
+- **Strict Mode**: Enabled (type safety enforced)
+- **Path Aliases**: `@/*` resolves to project root
+- **JSX Mode**: `react-jsx` (React 19 automatic runtime)
+
+Important compiler options in `tsconfig.json`:
+```json
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "strict": true,
+    "paths": { "@/*": ["./*"] }
+  }
+}
+```
+
 ## Analytics
 
 Vercel Analytics is enabled via `@vercel/analytics/next` in root layout.
@@ -251,6 +315,12 @@ healthCheck()            // Verify backend status
 - Timeout: 30 seconds (configurable via `NEXT_PUBLIC_API_TIMEOUT`)
 - Assistant ID: `gdelt` (from backend's langgraph.json)
 - Current retriever: `cohere_rerank` (hardcoded in backend)
+
+**Valid Retrievers** (for evaluation data):
+- `naive` - Basic vector similarity retrieval
+- `bm25` - Keyword-based BM25 algorithm
+- `ensemble` - Hybrid BM25 + vector combination
+- `cohere_rerank` - Ensemble + Cohere reranking (best performance)
 
 ### Next.js API Routes (Internal)
 These routes serve static evaluation and dataset data from the backend repository:
@@ -276,6 +346,59 @@ When bridging CSV data to API endpoints, normalize names:
 // API expects "cohere_rerank", "bm25", "ensemble", "naive"
 const normalized = name.toLowerCase().replace(/ /g, "_")
 ```
+
+### Error Handling Pattern
+
+The API client (`lib/api-client.ts`) defines custom error classes:
+
+```typescript
+// Custom error types in lib/types.ts
+class APIError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+    public code?: string,
+    public details?: any
+  )
+}
+
+class NetworkError extends Error {
+  constructor(message: string, public cause?: Error)
+}
+```
+
+**Usage in components**:
+```typescript
+try {
+  const result = await submitQuery({ question, retriever })
+  // Handle success
+} catch (error) {
+  if (error instanceof APIError) {
+    toast.error(`API Error: ${error.message}`)
+  } else if (error instanceof NetworkError) {
+    toast.error("Network error. Check backend server.")
+  }
+}
+```
+
+### CSV Data Parsing
+
+API routes parse evaluation CSV files with complex nested structures. The `app/api/evaluation/detailed/[retriever]/route.ts` demonstrates parsing Python list representations:
+
+```typescript
+// CSV contains Python list strings: "['context 1', 'context 2']"
+// Must parse carefully handling escaped quotes and nested structures
+function parseContextArray(contextsString: string): string[] {
+  // Manual state machine parser for Python list format
+  // Handles: escaped quotes, commas in content, nested structures
+  // Returns: Array of individual context strings
+}
+```
+
+This custom parser is necessary because:
+- CSV cells contain Python list string representations
+- Standard JSON parsing fails (single quotes, not JSON format)
+- Contexts may contain commas, quotes, or other special characters
 
 ## Common Pitfalls and Troubleshooting
 
