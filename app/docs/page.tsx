@@ -10,37 +10,43 @@ const docLinks = [
     title: "Getting Started",
     description: "Installation, setup, and your first query",
     icon: BookOpen,
-    href: "#",
+    href: "https://github.com/aie8-cert-challenge/gdelt-knowledge-base#-quick-start",
+    external: true,
   },
   {
     title: "API Reference",
     description: "Complete API documentation for all endpoints",
     icon: FileText,
-    href: "#",
+    href: "https://github.com/aie8-cert-challenge/gdelt-knowledge-base/blob/main/architecture/docs/04_api_reference.md",
+    external: true,
   },
   {
     title: "Architecture Guide",
     description: "Deep dive into the 5-layer system design",
     icon: FileText,
-    href: "#",
+    href: "https://github.com/aie8-cert-challenge/gdelt-knowledge-base/blob/main/architecture/00_README.md",
+    external: true,
   },
   {
     title: "Retriever Strategies",
     description: "Understanding naive, BM25, ensemble, and reranking",
     icon: FileText,
-    href: "#",
+    href: "https://github.com/aie8-cert-challenge/gdelt-knowledge-base#-architecture-summary",
+    external: true,
   },
   {
     title: "RAGAS Evaluation",
     description: "Guide to evaluation metrics and interpretation",
     icon: FileText,
-    href: "#",
+    href: "https://github.com/aie8-cert-challenge/gdelt-knowledge-base/tree/main?tab=readme-ov-file#-evaluation-results-summary",
+    external: true,
   },
   {
     title: "GitHub Repository",
     description: "Source code and contribution guidelines",
     icon: Github,
-    href: "https://github.com/gdelt-knowledge-base",
+    href: "https://github.com/aie8-cert-challenge/gdelt-knowledge-base",
+    external: true,
   },
 ]
 
@@ -73,10 +79,10 @@ export default function DocsPage() {
                     <Button variant="ghost" size="sm" className="w-full gap-2" asChild>
                       <a
                         href={doc.href}
-                        target={doc.icon === Github ? "_blank" : undefined}
-                        rel={doc.icon === Github ? "noopener noreferrer" : undefined}
+                        target={doc.external ? "_blank" : undefined}
+                        rel={doc.external ? "noopener noreferrer" : undefined}
                       >
-                        {doc.icon === Github ? "View on GitHub" : "Read More"}
+                        {doc.icon === Github ? "View on GitHub" : "Read Documentation"}
                         <ExternalLink className="h-3 w-3" />
                       </a>
                     </Button>
