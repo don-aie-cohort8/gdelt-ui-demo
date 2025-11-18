@@ -232,6 +232,47 @@ curl http://localhost:2024/ok
 - `npm run build` - Build for production
 - `npm start` - Start production server
 - `npm run lint` - Run ESLint
+- `npm test` - Run integration tests (Playwright)
+- `npm run test:ui` - Run tests in interactive UI mode
+- `npm run test:headed` - Run tests with visible browser
+- `npm run test:debug` - Run tests in debug mode
+- `npm run test:report` - View test results report
+
+## Testing
+
+This project uses [Playwright](https://playwright.dev) for end-to-end integration testing.
+
+### Running Tests
+
+**Prerequisites:**
+```bash
+# Install Playwright browsers (first time only)
+npx playwright install chromium
+
+# Start the dev server (in another terminal)
+npm run dev
+```
+
+**Run Tests:**
+```bash
+# Headless mode (CI)
+npm test
+
+# Interactive UI mode (recommended for development)
+npm run test:ui
+
+# Watch execution in browser
+npm run test:headed
+```
+
+### Test Coverage
+
+- ✅ **Query Console** - Query submission, history, backend integration
+- ✅ **Evaluation Dashboard** - Metrics loading, charts, drill-down modal
+- ✅ **Datasets Page** - Dataset metadata, manifests, fingerprints
+- ✅ **Backend Health** - Real-time status monitoring, troubleshooting
+
+See [`tests/README.md`](tests/README.md) for detailed documentation.
 
 ## Deploy on Vercel
 
