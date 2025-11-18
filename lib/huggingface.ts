@@ -5,16 +5,29 @@
  * instead of reading from local file system or sibling directories.
  */
 
+import type {
+  SourceDocumentRow,
+  GoldenTestsetRow,
+  EvaluationInputRow,
+  EvaluationMetricRow,
+} from "./types"
+
 const HF_BASE_URL = "https://datasets-server.huggingface.co"
 
-export interface HFDatasetRow {
-  row: Record<string, any>
+/**
+ * Generic HuggingFace dataset row wrapper
+ */
+export interface HFDatasetRow<T = Record<string, any>> {
+  row: T
   row_idx: number
   truncated_cells: string[]
 }
 
-export interface HFDatasetResponse {
-  rows: HFDatasetRow[]
+/**
+ * Generic HuggingFace dataset response
+ */
+export interface HFDatasetResponse<T = Record<string, any>> {
+  rows: HFDatasetRow<T>[]
   features: {
     feature_idx: number
     name: string
@@ -26,6 +39,14 @@ export interface HFDatasetResponse {
 }
 
 /**
+ * Type-safe aliases for specific datasets
+ */
+export type SourceDocumentResponse = HFDatasetResponse<SourceDocumentRow>
+export type GoldenTestsetResponse = HFDatasetResponse<GoldenTestsetRow>
+export type EvaluationInputResponse = HFDatasetResponse<EvaluationInputRow>
+export type EvaluationMetricResponse = HFDatasetResponse<EvaluationMetricRow>
+
+/**
  * Fetch rows from a HuggingFace dataset using the Dataset Viewer REST API
  *
  * @param dataset - Dataset name (e.g., "dwb2023/gdelt-rag-evaluation-metrics")
@@ -34,14 +55,24 @@ export interface HFDatasetResponse {
  * @param offset - Starting row index (default: 0)
  * @param length - Number of rows to fetch (max: 100)
  * @returns Dataset rows and metadata
+ *
+ * @example
+ * ```typescript
+ * // Generic usage
+ * const data = await fetchHFDataset("dwb2023/gdelt-rag-sources-v2")
+ *
+ * // Type-safe usage
+ * const data = await fetchHFDataset<SourceDocumentRow>("dwb2023/gdelt-rag-sources-v2")
+ * data.rows[0].row.page_content // TypeScript knows this exists
+ * ```
  */
-export async function fetchHFDataset(
+export async function fetchHFDataset<T = Record<string, any>>(
   dataset: string,
   config = 'default',
   split = 'train',
   offset = 0,
   length = 100
-): Promise<HFDatasetResponse> {
+): Promise<HFDatasetResponse<T>> {
   const url = `${HF_BASE_URL}/rows?` + new URLSearchParams({
     dataset,
     config,

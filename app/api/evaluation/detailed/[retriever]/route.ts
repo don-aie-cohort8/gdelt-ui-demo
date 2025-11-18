@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { fetchHFDataset, normalizeRetrieverName, average, parseContextArray } from "@/lib/huggingface"
+import type { EvaluationMetricRow } from "@/lib/types"
 
 const METRICS_DATASET = "dwb2023/gdelt-rag-evaluation-metrics"
 const VALID_RETRIEVERS = ["naive", "bm25", "ensemble", "cohere_rerank"]
@@ -34,8 +35,8 @@ export async function GET(
       )
     }
 
-    // Fetch all rows from HuggingFace
-    const data = await fetchHFDataset(METRICS_DATASET, 'default', 'train', 0, 100)
+    // Fetch all rows from HuggingFace with type safety
+    const data = await fetchHFDataset<EvaluationMetricRow>(METRICS_DATASET, 'default', 'train', 0, 100)
 
     // Filter and transform for specific retriever
     const results: DetailedResult[] = data.rows

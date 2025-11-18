@@ -5,6 +5,7 @@
 
 import { NextResponse } from "next/server"
 import { fetchHFDataset, normalizeRetrieverName, average } from "@/lib/huggingface"
+import type { EvaluationMetricRow } from "@/lib/types"
 
 const METRICS_DATASET = "dwb2023/gdelt-rag-evaluation-metrics"
 
@@ -32,8 +33,8 @@ const MANIFEST = {
 
 export async function GET() {
   try {
-    // Fetch evaluation records from HuggingFace Dataset Viewer API
-    const data = await fetchHFDataset(METRICS_DATASET, 'default', 'train', 0, 100)
+    // Fetch evaluation records from HuggingFace Dataset Viewer API with type safety
+    const data = await fetchHFDataset<EvaluationMetricRow>(METRICS_DATASET, 'default', 'train', 0, 100)
 
     // Group by retriever and aggregate metrics
     const grouped = new Map<string, {
