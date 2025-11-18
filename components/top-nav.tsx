@@ -4,6 +4,7 @@ import { Bell, Search, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { BackendStatus } from "@/components/backend-status"
 
 export function TopNav() {
   return (
@@ -17,7 +18,8 @@ export function TopNav() {
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
+        <BackendStatus />
         <Button variant="ghost" size="icon" className="h-9 w-9">
           <Bell className="h-4 w-4" />
           <span className="sr-only">Notifications</span>

@@ -153,20 +153,56 @@ GET /api/datasets/info         - Hugging Face dataset metadata
 
 ### Data Sources
 
-- **Query responses**: LangGraph Server → Direct HTTP calls
-- **Evaluation metrics**: `../gdelt-knowledge-base/deliverables/evaluation_evidence/comparative_ragas_results.csv`
-- **Dataset manifest**: `../gdelt-knowledge-base/data/interim/manifest.json`
+All data is fetched from real sources with zero simulated data:
+
+- **Query responses**: LangGraph Server API (real-time RAG execution)
+- **Evaluation metrics**: HuggingFace Dataset Viewer API (`dwb2023/gdelt-rag-evaluation-metrics`)
+- **Dataset metadata**: Static metadata (matches HuggingFace datasets)
+- **Ingestion manifest**: Static provenance data (SHA-256 fingerprints)
 
 ### Environment Variables
 
-Create `.env.local` (already configured by default):
+Copy `.env.local.example` to `.env.local` and configure:
 
 ```bash
-# Backend API endpoint
-NEXT_PUBLIC_API_BASE_URL=http://localhost:2024
+cp .env.local.example .env.local
+```
 
-# Request timeout (milliseconds)
-NEXT_PUBLIC_API_TIMEOUT=30000
+**Required Variables:**
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `NEXT_PUBLIC_API_BASE_URL` | `http://localhost:2024` | LangGraph Server URL |
+| `NEXT_PUBLIC_API_TIMEOUT` | `30000` | API timeout in milliseconds |
+
+**Optional Variables:**
+
+| Variable | Description |
+|----------|-------------|
+| `NEXT_PUBLIC_LANGSMITH_TRACING` | Enable LangSmith tracing |
+| `NEXT_PUBLIC_LANGSMITH_PROJECT` | LangSmith project name |
+
+**Note:** Variables prefixed with `NEXT_PUBLIC_` are exposed to the browser.
+
+### Backend Setup
+
+For the query console to work, you need the LangGraph Server running:
+
+```bash
+# Clone the backend repository (sibling directory)
+cd ..
+git clone https://github.com/aie8-cert-challenge/gdelt-knowledge-base.git
+cd gdelt-knowledge-base
+
+# Configure backend environment (see backend README)
+# Then start the LangGraph server
+langgraph dev
+```
+
+The backend will be available at `http://localhost:2024`. Verify with:
+
+```bash
+curl http://localhost:2024/ok
 ```
 
 ## 🛠️ Tech Stack

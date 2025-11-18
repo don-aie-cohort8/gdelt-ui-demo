@@ -150,6 +150,69 @@ export interface HuggingFaceDataset {
   version?: string;
 }
 
+// ======================
+// HuggingFace Dataset Row Types
+// ======================
+
+/**
+ * Row schema for dwb2023/gdelt-rag-sources-v2 dataset
+ * Contains GDELT documentation pages with metadata
+ */
+export interface SourceDocumentRow {
+  page_content: string;
+  metadata: {
+    author: string;
+    title: string;
+    page: number;
+    total_pages?: number;
+    file_path: string;
+    source: string;
+    creationDate: string;
+    creationdate?: string;
+    modDate?: string;
+    moddate?: string;
+    creator?: string;
+    producer?: string;
+    format?: string;
+  };
+}
+
+/**
+ * Row schema for dwb2023/gdelt-rag-golden-testset-v2 dataset
+ * Contains synthetic QA pairs for evaluation
+ */
+export interface GoldenTestsetRow {
+  user_input: string;
+  reference_contexts: string[] | string; // May be array or Python list string
+  reference: string;
+  synthesizer_name: string;
+}
+
+/**
+ * Row schema for dwb2023/gdelt-rag-evaluation-inputs dataset
+ * Contains retrieval inputs and outputs for each strategy
+ */
+export interface EvaluationInputRow {
+  retriever: string;
+  user_input: string;
+  retrieved_contexts: string[] | string; // May be array or Python list string
+  reference_contexts: string[] | string; // May be array or Python list string
+  response: string;
+  reference: string;
+  synthesizer_name?: string;
+}
+
+/**
+ * Row schema for dwb2023/gdelt-rag-evaluation-metrics dataset
+ * Contains RAGAS evaluation metrics for each retrieval strategy
+ */
+export interface EvaluationMetricRow extends EvaluationInputRow {
+  faithfulness: number;
+  answer_relevancy: number;
+  context_precision: number;
+  context_recall: number;
+}
+
 export interface ManifestEntry {
   stage: string;
   file: string;
