@@ -49,9 +49,9 @@ const DATASETS = [
   {
     id: "gdelt-rag-evaluation-inputs",
     name: "GDELT RAG Evaluation Inputs",
-    description: "60 evaluation records from 5 retrieval strategies (baseline, naive, BM25, ensemble, cohere_rerank)",
+    description: "48 evaluation records from 4 retrieval strategies (naive, BM25, ensemble, cohere_rerank)",
     url: "https://huggingface.co/datasets/dwb2023/gdelt-rag-evaluation-inputs",
-    records: 60,
+    records: 48,
     format: ["Parquet", "JSONL", "HF Datasets"],
     license: "Apache 2.0",
     version: "v1",
@@ -72,9 +72,9 @@ const DATASETS = [
   {
     id: "gdelt-rag-evaluation-metrics",
     name: "GDELT RAG Evaluation Metrics",
-    description: "60 evaluation records with detailed RAGAS scores (faithfulness, relevancy, precision, recall)",
+    description: "48 evaluation records with detailed RAGAS scores (faithfulness, relevancy, precision, recall)",
     url: "https://huggingface.co/datasets/dwb2023/gdelt-rag-evaluation-metrics",
-    records: 60,
+    records: 48,
     format: ["Parquet", "JSONL", "HF Datasets"],
     license: "Apache 2.0",
     version: "v1",
