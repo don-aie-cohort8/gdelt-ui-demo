@@ -25,6 +25,20 @@ An interactive Next.js frontend for exploring and explaining the [`gdelt-knowled
 - SHA-256 fingerprint verification
 - Data lineage visualization
 
+### **Source Documents Browser** (`/sources`)
+- Browse 38 GDELT documentation pages used for RAG retrieval
+- Full-text search across content, titles, and authors
+- Pagination support for navigating documents
+- Document metadata display (page numbers, creation dates, file paths)
+- Direct link to HuggingFace dataset
+
+### **Golden Test Set Viewer** (`/testset`)
+- Explore 48 synthetic Q&A pairs used for evaluation
+- View questions, reference answers, and reference contexts
+- Collapsible context display for detailed inspection
+- Full-text search across questions and answers
+- Track data synthesizer information
+
 ### **Architecture Documentation** (`/architecture`)
 - 5-layer architecture breakdown
 - Module inventory with descriptions
@@ -110,19 +124,40 @@ bun start
 ```
 gdelt-ui-demo/
 ├── app/                    # Next.js App Router pages
+│   ├── api/                # Next.js API routes
+│   │   ├── evaluation/     # Evaluation metrics endpoints
+│   │   ├── datasets/       # Dataset metadata endpoints
+│   │   ├── sources/        # Source documents API
+│   │   └── testset/        # Golden testset API
 │   ├── architecture/       # Architecture documentation
 │   ├── datasets/           # Dataset explorer
 │   ├── docs/               # Documentation pages
 │   ├── evaluation/         # Evaluation metrics
 │   ├── query/              # Query console
+│   ├── sources/            # Source documents browser
+│   ├── testset/            # Golden test set viewer
 │   ├── layout.tsx          # Root layout
 │   └── page.tsx            # Home page
 ├── components/             # React components
-│   ├── ui/                 # shadcn/ui components
+│   ├── ui/                 # shadcn/ui components (19 components)
 │   ├── app-sidebar.tsx     # Application sidebar
+│   ├── backend-status.tsx  # Backend health monitor
+│   ├── providers.tsx       # React Query provider
 │   └── top-nav.tsx         # Top navigation
 ├── hooks/                  # Custom React hooks
+│   ├── use-backend-health.ts  # Backend health polling
+│   ├── use-datasets.ts     # React Query dataset hooks
+│   └── use-evaluation.ts   # React Query evaluation hooks
 ├── lib/                    # Utility functions
+│   ├── api-client.ts       # LangGraph API client
+│   ├── huggingface.ts      # HuggingFace API integration
+│   ├── types.ts            # TypeScript type definitions
+│   └── utils.ts            # Utility helpers
+├── tests/                  # Playwright integration tests
+│   ├── query-console.spec.ts   # Query console tests (11)
+│   ├── evaluation.spec.ts  # Evaluation dashboard tests (15)
+│   ├── datasets.spec.ts    # Datasets page tests (14)
+│   └── backend-health.spec.ts  # Backend health tests (11)
 ├── public/                 # Static assets
 └── package.json            # Dependencies and scripts
 ```
@@ -143,12 +178,15 @@ GET  http://localhost:2024/ok               - Health check
 ```
 
 #### 2. Next.js API Routes (internal)
-Used for serving evaluation and dataset data:
+Used for serving evaluation and dataset data from HuggingFace:
 
 ```
-GET /api/evaluation/metrics    - RAGAS metrics from backend CSV
-GET /api/datasets/manifest     - Ingestion manifest from backend
-GET /api/datasets/info         - Hugging Face dataset metadata
+GET /api/evaluation/metrics              - RAGAS metrics summary
+GET /api/evaluation/detailed/[retriever] - Per-query evaluation results
+GET /api/datasets/manifest               - Ingestion manifest
+GET /api/datasets/info                   - Dataset metadata
+GET /api/sources?offset&length&search    - Source documents browser
+GET /api/testset?offset&length&search    - Golden testset browser
 ```
 
 ### Data Sources
@@ -157,6 +195,8 @@ All data is fetched from real sources with zero simulated data:
 
 - **Query responses**: LangGraph Server API (real-time RAG execution)
 - **Evaluation metrics**: HuggingFace Dataset Viewer API (`dwb2023/gdelt-rag-evaluation-metrics`)
+- **Source documents**: HuggingFace Dataset Viewer API (`dwb2023/gdelt-rag-sources-v2`)
+- **Golden testset**: HuggingFace Dataset Viewer API (`dwb2023/gdelt-rag-golden-testset-v2`)
 - **Dataset metadata**: Static metadata (matches HuggingFace datasets)
 - **Ingestion manifest**: Static provenance data (SHA-256 fingerprints)
 
@@ -211,7 +251,8 @@ curl http://localhost:2024/ok
 - **Framework**: Next.js 16.0.0 (App Router, React 19)
 - **Language**: TypeScript (strict mode, ES2017 target)
 - **Styling**: Tailwind CSS 4.x
-- **UI Components**: Radix UI primitives via shadcn/ui
+- **UI Components**: Radix UI primitives via shadcn/ui (19 components)
+- **State Management**: TanStack React Query v5 (caching, background refetching)
 - **Icons**: Lucide React
 - **Charts**: Recharts (bar charts, radar charts)
 - **Forms**: React Hook Form + Zod validation

@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Database, Home, MessageSquare, BarChart3, Layers, BookOpen, ChevronRight } from "lucide-react"
+import { Database, Home, MessageSquare, BarChart3, Layers, BookOpen, ChevronRight, FileText, TestTube } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -35,6 +35,16 @@ const items = [
     title: "Datasets",
     url: "/datasets",
     icon: Database,
+  },
+  {
+    title: "Sources",
+    url: "/sources",
+    icon: FileText,
+  },
+  {
+    title: "Test Set",
+    url: "/testset",
+    icon: TestTube,
   },
   {
     title: "Architecture",
