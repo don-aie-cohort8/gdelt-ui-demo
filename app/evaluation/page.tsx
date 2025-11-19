@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { BarChart3, TrendingUp, Loader2, AlertCircle, Calendar, Cpu, Database, Info } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from "recharts"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { DetailedResultsModal } from "@/components/detailed-results-modal"
+import { useEvaluationMetrics } from "@/hooks/use-evaluation"
 
 // Metric definitions for tooltips
 const METRIC_DEFINITIONS = {
@@ -46,63 +47,12 @@ const METRIC_DEFINITIONS = {
   }
 }
 
-interface EvaluationData {
-  metrics: Array<{
-    retriever: string;
-    faithfulness: number;
-    answer_relevancy: number;
-    context_precision: number;
-    context_recall: number;
-    average: number;
-  }>;
-  manifest: {
-    generated_at: string;
-    llm: {
-      model: string;
-      temperature: number;
-    };
-    embeddings: {
-      model: string;
-      dimensions: number;
-    };
-    retrievers: any[];
-    evaluation: {
-      golden_testset_size: number;
-      source_dataset_size: number;
-    };
-    data_provenance: {
-      sources_sha256: string;
-      golden_testset_sha256: string;
-    };
-  };
-}
-
 export default function EvaluationPage() {
-  const [data, setData] = useState<EvaluationData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedRetriever, setSelectedRetriever] = useState<string | null>(null)
 
-  useEffect(() => {
-    async function fetchEvaluationData() {
-      try {
-        const response = await fetch("/api/evaluation/metrics")
-        if (!response.ok) {
-          throw new Error("Failed to fetch evaluation data")
-        }
-        const result = await response.json()
-        setData(result)
-      } catch (err) {
-        console.error("Error fetching evaluation data:", err)
-        setError(err instanceof Error ? err.message : "Unknown error")
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchEvaluationData()
-  }, [])
+  // Use React Query hook for data fetching
+  const { data, isLoading: loading, error } = useEvaluationMetrics()
 
   if (loading) {
     return (
@@ -136,7 +86,7 @@ export default function EvaluationPage() {
               <div className="flex min-h-[400px] items-center justify-center">
                 <div className="text-center">
                   <AlertCircle className="mx-auto mb-2 h-8 w-8 text-destructive" />
-                  <p className="text-sm text-destructive">{error || "Failed to load data"}</p>
+                  <p className="text-sm text-destructive">{error?.message || "Failed to load data"}</p>
                 </div>
               </div>
             </main>

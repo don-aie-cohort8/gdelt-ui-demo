@@ -1,6 +1,5 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { Database, ExternalLink, GitBranch, Loader2, AlertCircle, Shield, FileCheck } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -9,81 +8,16 @@ import { SidebarProvider } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { TopNav } from "@/components/top-nav"
 import { Separator } from "@/components/ui/separator"
-
-interface Dataset {
-  id: string;
-  name: string;
-  description: string;
-  url: string;
-  records: number;
-  format: string[];
-  license: string;
-  version?: string;
-}
-
-interface Manifest {
-  id: string;
-  generated_at: string;
-  env: {
-    python: string;
-    ragas: string;
-    langchain: string;
-  };
-  paths: {
-    sources: {
-      jsonl: string;
-      parquet: string;
-    };
-    golden_testset: {
-      jsonl: string;
-      parquet: string;
-    };
-  };
-  fingerprints: {
-    sources: {
-      jsonl_sha256: string;
-      parquet_sha256: string;
-    };
-    golden_testset: {
-      jsonl_sha256: string;
-      parquet_sha256: string;
-    };
-  };
-}
+import { useDatasetsInfo, useManifest } from "@/hooks/use-datasets"
 
 export default function DatasetsPage() {
-  const [datasets, setDatasets] = useState<Dataset[]>([])
-  const [manifest, setManifest] = useState<Manifest | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  // Use React Query hooks for data fetching
+  const { data: datasetsData, isLoading: datasetsLoading, error: datasetsError } = useDatasetsInfo()
+  const { data: manifest, isLoading: manifestLoading, error: manifestError } = useManifest()
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const [datasetsRes, manifestRes] = await Promise.all([
-          fetch("/api/datasets/info"),
-          fetch("/api/datasets/manifest"),
-        ])
-
-        if (!datasetsRes.ok || !manifestRes.ok) {
-          throw new Error("Failed to fetch dataset information")
-        }
-
-        const datasetsData = await datasetsRes.json()
-        const manifestData = await manifestRes.json()
-
-        setDatasets(datasetsData.datasets)
-        setManifest(manifestData)
-      } catch (err) {
-        console.error("Error fetching datasets:", err)
-        setError(err instanceof Error ? err.message : "Unknown error")
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchData()
-  }, [])
+  const datasets = datasetsData?.datasets || []
+  const loading = datasetsLoading || manifestLoading
+  const error = datasetsError || manifestError
 
   if (loading) {
     return (
@@ -117,7 +51,7 @@ export default function DatasetsPage() {
               <div className="flex min-h-[400px] items-center justify-center">
                 <div className="text-center">
                   <AlertCircle className="mx-auto mb-2 h-8 w-8 text-destructive" />
-                  <p className="text-sm text-destructive">{error}</p>
+                  <p className="text-sm text-destructive">{error?.message || "Unknown error"}</p>
                 </div>
               </div>
             </main>
