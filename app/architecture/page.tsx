@@ -10,56 +10,57 @@ const architectureLayers = [
   {
     icon: Code2,
     title: "Configuration Layer",
-    description: "YAML schemas and validation for system-wide settings",
+    description: "Environment-based configuration with cached singletons",
     color: "primary",
     modules: [
-      { name: "config_schema.py", desc: "Pydantic models for configuration validation" },
-      { name: "yaml_loader.py", desc: "Safe YAML parsing with schema enforcement" },
-      { name: "env_validator.py", desc: "Environment variable management" },
+      { name: "config.py", desc: "Singletons for LLM, embeddings, and Qdrant client (@lru_cache)" },
+      { name: ".env", desc: "Environment variables (OPENAI_API_KEY, QDRANT_URL, COHERE_API_KEY)" },
     ],
   },
   {
     icon: Database,
     title: "Data Layer",
-    description: "Ingestion pipelines and manifest generation for provenance tracking",
+    description: "PDF ingestion and HuggingFace dataset management with provenance tracking",
     color: "secondary",
     modules: [
-      { name: "ingest.py", desc: "Data loading from Hugging Face datasets" },
-      { name: "manifest_gen.py", desc: "Provenance tracking with SHA hashes" },
-      { name: "preprocessor.py", desc: "Text chunking and embedding preparation" },
+      { name: "scripts/ingest_raw_pdfs.py", desc: "PDF extraction and golden testset generation (338 lines)" },
+      { name: "utils/loaders.py", desc: "HuggingFace dataset loading functions" },
+      { name: "utils/manifest.py", desc: "RUN_MANIFEST.json generation with SHA-256 hashes" },
     ],
   },
   {
     icon: Zap,
     title: "Retrieval Layer",
-    description: "Multi-strategy RAG with vector stores and reranking",
+    description: "Multi-strategy RAG with Qdrant vector store and 4 retrieval strategies",
     color: "accent",
     modules: [
-      { name: "vectorstore.py", desc: "FAISS and Chroma vector database management" },
-      { name: "retrievers.py", desc: "Naive, BM25, ensemble, and rerank strategies" },
-      { name: "embeddings.py", desc: "OpenAI and sentence-transformers integration" },
+      { name: "retrievers.py", desc: "Factory for naive, BM25, ensemble, and Cohere rerank retrievers" },
+      { name: "config.py::create_vector_store()", desc: "Qdrant vector database factory (Docker container)" },
+      { name: "config.py::get_embeddings()", desc: "OpenAI text-embedding-3-small singleton" },
     ],
   },
   {
     icon: GitBranch,
     title: "Orchestration Layer",
-    description: "LangGraph workflows for complex RAG pipelines",
+    description: "LangGraph workflows with factory pattern for deferred initialization",
     color: "chart-4",
     modules: [
-      { name: "graph.py", desc: "LangGraph state machine definition" },
-      { name: "nodes.py", desc: "Query routing, retrieval, and generation nodes" },
-      { name: "chains.py", desc: "LangChain prompt templates and chains" },
+      { name: "graph.py", desc: "Factories: build_graph() and build_all_graphs() with inline nodes" },
+      { name: "state.py", desc: "TypedDict state schema (question, context, response)" },
+      { name: "prompts.py", desc: "RAG prompt templates (BASELINE_PROMPT)" },
     ],
   },
   {
     icon: Layers,
     title: "Execution Layer",
-    description: "Server APIs and CLI for running queries and evaluations",
+    description: "Three-phase evaluation pipeline with LangGraph Server and Makefile CLI",
     color: "chart-5",
     modules: [
-      { name: "server.py", desc: "FastAPI server with REST endpoints" },
-      { name: "cli.py", desc: "Command-line interface for batch processing" },
-      { name: "evaluator.py", desc: "RAGAS metric computation and reporting" },
+      { name: "app/graph_app.py", desc: "LangGraph Server entrypoint (not FastAPI)" },
+      { name: "scripts/run_inference.py", desc: "Phase 1: RAG inference (~$3-4, saves inputs immediately)" },
+      { name: "scripts/run_evaluation.py", desc: "Phase 2: RAGAS metrics (~$2, saves metrics)" },
+      { name: "scripts/summarize_results.py", desc: "Phase 3: Aggregation ($0, creates manifest)" },
+      { name: "Makefile", desc: "CLI automation (make ingest, make eval, make validate)" },
     ],
   },
 ]
@@ -75,7 +76,7 @@ export default function ArchitecturePage() {
             <div className="mb-6 space-y-2">
               <h1 className="text-3xl font-bold tracking-tight">Architecture Explorer</h1>
               <p className="text-muted-foreground">
-                Understand the 5-layer architecture powering the GDELT Knowledge Graph RAG system
+                Understand the 5-layer architecture powering the GDELT Knowledge Base RAG system
               </p>
             </div>
 
@@ -84,8 +85,10 @@ export default function ArchitecturePage() {
               <CardHeader>
                 <CardTitle>System Architecture</CardTitle>
                 <CardDescription>
-                  The system is organized into five distinct layers, each with specific responsibilities for
-                  configuration, data processing, retrieval, orchestration, and execution.
+                  Built with Qdrant vector store, OpenAI embeddings (text-embedding-3-small),
+                  LangGraph orchestration, and a three-phase evaluation pipeline decoupling
+                  inference from RAGAS metrics for cost control and resilience. The system is
+                  organized into five distinct layers with factory pattern for deferred initialization.
                 </CardDescription>
               </CardHeader>
               <CardContent>
