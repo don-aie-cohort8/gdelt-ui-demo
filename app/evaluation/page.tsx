@@ -398,8 +398,11 @@ export default function EvaluationPage() {
                   </CardTitle>
                   <CardDescription>Side-by-side RAGAS metric scores across retrievers</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
+                <CardContent className="space-y-3">
+                  <div className="text-xs text-muted-foreground bg-muted/30 p-2 rounded border border-border/50">
+                    <p><strong>How to read:</strong> Higher bars indicate better performance. Hover over bars to see metric definitions and ideal ranges.</p>
+                  </div>
+                  <ResponsiveContainer width="100%" height={320}>
                     <BarChart
                       data={data.metrics.map((m) => ({
                         name: m.retriever.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
@@ -410,22 +413,66 @@ export default function EvaluationPage() {
                       }))}
                       margin={{ top: 20, right: 10, left: 0, bottom: 5 }}
                     >
-                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                      <XAxis dataKey="name" className="text-xs fill-muted-foreground" angle={-15} textAnchor="end" height={60} />
-                      <YAxis className="text-xs fill-muted-foreground" domain={[70, 100]} />
-                      <RechartsTooltip
-                        contentStyle={{
-                          backgroundColor: "hsl(var(--card))",
-                          border: "1px solid hsl(var(--border))",
-                          borderRadius: "0.5rem",
-                        }}
-                        labelStyle={{ color: "hsl(var(--foreground))" }}
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                      <XAxis
+                        dataKey="name"
+                        tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                        angle={-15}
+                        textAnchor="end"
+                        height={60}
                       />
-                      <Legend wrapperStyle={{ fontSize: "12px" }} />
-                      <Bar dataKey="Faithfulness" fill="hsl(var(--primary))" />
-                      <Bar dataKey="Answer Relevancy" fill="hsl(var(--secondary))" />
-                      <Bar dataKey="Context Precision" fill="hsl(var(--accent))" />
-                      <Bar dataKey="Context Recall" fill="hsl(var(--muted))" />
+                      <YAxis
+                        tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                        domain={[70, 100]}
+                        label={{ value: 'Score (%)', angle: -90, position: 'insideLeft', style: { fill: "hsl(var(--muted-foreground))", fontSize: 11 } }}
+                      />
+                      <RechartsTooltip
+                        content={({ active, payload, label }) => {
+                          if (!active || !payload || payload.length === 0) return null
+                          const metricDefs = {
+                            "Faithfulness": METRIC_DEFINITIONS.faithfulness,
+                            "Answer Relevancy": METRIC_DEFINITIONS.answer_relevancy,
+                            "Context Precision": METRIC_DEFINITIONS.context_precision,
+                            "Context Recall": METRIC_DEFINITIONS.context_recall,
+                          }
+
+                          return (
+                            <div className="rounded-lg border border-border bg-card p-3 shadow-lg max-w-xs">
+                              <p className="font-semibold text-sm mb-2 text-foreground">{label}</p>
+                              <div className="space-y-2">
+                                {payload.map((entry: any) => {
+                                  const def = metricDefs[entry.name as keyof typeof metricDefs]
+                                  return (
+                                    <div key={entry.name} className="space-y-1">
+                                      <div className="flex items-center justify-between gap-2">
+                                        <div className="flex items-center gap-1.5">
+                                          <div
+                                            className="w-3 h-3 rounded-sm"
+                                            style={{ backgroundColor: entry.color }}
+                                          />
+                                          <span className="text-xs font-medium text-foreground">{entry.name}:</span>
+                                        </div>
+                                        <span className="text-xs font-bold text-foreground">{entry.value.toFixed(1)}%</span>
+                                      </div>
+                                      {def && (
+                                        <p className="text-xs text-muted-foreground pl-4.5">{def.shortDesc}</p>
+                                      )}
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            </div>
+                          )
+                        }}
+                      />
+                      <Legend
+                        wrapperStyle={{ fontSize: "12px", paddingTop: "10px" }}
+                        iconType="square"
+                      />
+                      <Bar dataKey="Faithfulness" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="Answer Relevancy" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="Context Precision" fill="#ec4899" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="Context Recall" fill="#f59e0b" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -440,8 +487,11 @@ export default function EvaluationPage() {
                   </CardTitle>
                   <CardDescription>Multi-dimensional performance comparison</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
+                <CardContent className="space-y-3">
+                  <div className="text-xs text-muted-foreground bg-muted/30 p-2 rounded border border-border/50">
+                    <p><strong>How to read:</strong> Each colored shape represents a retriever. Larger shapes indicate better overall performance across all metrics. Hover to see exact scores.</p>
+                  </div>
+                  <ResponsiveContainer width="100%" height={320}>
                     <RadarChart
                       data={[
                         { metric: "Faithfulness", ...Object.fromEntries(data.metrics.map((m) => [m.retriever, m.faithfulness * 100])) },
@@ -450,20 +500,67 @@ export default function EvaluationPage() {
                         { metric: "Recall", ...Object.fromEntries(data.metrics.map((m) => [m.retriever, m.context_recall * 100])) },
                       ]}
                     >
-                      <PolarGrid className="stroke-border" />
-                      <PolarAngleAxis dataKey="metric" className="text-xs fill-muted-foreground" />
-                      <PolarRadiusAxis angle={90} domain={[70, 100]} className="text-xs fill-muted-foreground" />
-                      {data.metrics.map((m, idx) => (
-                        <Radar
-                          key={m.retriever}
-                          name={m.retriever.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-                          dataKey={m.retriever}
-                          stroke={["hsl(var(--primary))", "hsl(var(--secondary))", "hsl(var(--accent))", "hsl(var(--muted))"][idx % 4]}
-                          fill={["hsl(var(--primary))", "hsl(var(--secondary))", "hsl(var(--accent))", "hsl(var(--muted))"][idx % 4]}
-                          fillOpacity={0.3}
-                        />
-                      ))}
-                      <Legend wrapperStyle={{ fontSize: "12px" }} />
+                      <PolarGrid stroke="hsl(var(--border))" strokeDasharray="3 3" />
+                      <PolarAngleAxis
+                        dataKey="metric"
+                        tick={{ fill: "hsl(var(--foreground))", fontSize: 12, fontWeight: 500 }}
+                      />
+                      <PolarRadiusAxis
+                        angle={90}
+                        domain={[70, 100]}
+                        tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
+                        tickCount={4}
+                      />
+                      <RechartsTooltip
+                        content={({ active, payload }) => {
+                          if (!active || !payload || payload.length === 0) return null
+
+                          return (
+                            <div className="rounded-lg border border-border bg-card p-3 shadow-lg">
+                              <p className="font-semibold text-sm mb-2 text-foreground">
+                                {payload[0].payload.metric}
+                              </p>
+                              <div className="space-y-1.5">
+                                {payload.map((entry: any) => (
+                                  <div key={entry.name} className="flex items-center justify-between gap-3">
+                                    <div className="flex items-center gap-1.5">
+                                      <div
+                                        className="w-3 h-3 rounded-full"
+                                        style={{ backgroundColor: entry.stroke }}
+                                      />
+                                      <span className="text-xs font-medium text-foreground capitalize">
+                                        {entry.name.replace(/_/g, " ")}:
+                                      </span>
+                                    </div>
+                                    <span className="text-xs font-bold text-foreground">
+                                      {entry.value.toFixed(1)}%
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )
+                        }}
+                      />
+                      {data.metrics.map((m, idx) => {
+                        const colors = ["#3b82f6", "#8b5cf6", "#ec4899", "#f59e0b"]
+                        const color = colors[idx % colors.length]
+                        return (
+                          <Radar
+                            key={m.retriever}
+                            name={m.retriever.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                            dataKey={m.retriever}
+                            stroke={color}
+                            fill={color}
+                            fillOpacity={0.15}
+                            strokeWidth={2}
+                          />
+                        )
+                      })}
+                      <Legend
+                        wrapperStyle={{ fontSize: "12px", paddingTop: "10px" }}
+                        iconType="circle"
+                      />
                     </RadarChart>
                   </ResponsiveContainer>
                 </CardContent>
