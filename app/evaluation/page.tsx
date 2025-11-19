@@ -122,6 +122,9 @@ export default function EvaluationPage() {
               </div>
 
               {/* Key Metrics */}
+              <div className="mb-2">
+                <p className="text-sm text-muted-foreground">Average metrics across all retrievers</p>
+              </div>
               <div className="mb-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                 {[
                   { key: "faithfulness", name: "Faithfulness", value: avgMetrics.faithfulness },
