@@ -1,7 +1,7 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import type { SourceDocumentRow, GoldenTestsetRow } from "@/lib/types"
+import type { SourceDocumentRow, GoldenTestsetRow, EvaluationInputRow, EvaluationMetricRow } from "@/lib/types"
 
 // ===========================
 // Sources Dataset Hook
@@ -173,5 +173,97 @@ export function useManifest() {
     },
     // This data rarely changes, so keep it for 30 minutes
     staleTime: 30 * 60 * 1000,
+  })
+}
+
+// ===========================
+// Evaluation Inputs Dataset Hook
+// ===========================
+
+interface EvaluationInputItem {
+  row: EvaluationInputRow & {
+    retrieved_contexts: string[]
+    reference_contexts: string[]
+  }
+  row_idx: number
+}
+
+interface EvaluationInputsResponse {
+  rows: EvaluationInputItem[]
+  total: number
+  offset: number
+  length: number
+  hasMore: boolean
+}
+
+export function useEvaluationInputs(offset: number = 0, length: number = 20, search?: string) {
+  return useQuery({
+    queryKey: ["evaluation-inputs", offset, length, search],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        offset: String(offset),
+        length: String(length),
+      })
+
+      if (search) {
+        params.set("search", search)
+      }
+
+      const res = await fetch(`/api/evaluation-inputs?${params}`)
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch evaluation inputs")
+      }
+
+      return res.json() as Promise<EvaluationInputsResponse>
+    },
+    // Keep previous data while fetching new page
+    placeholderData: (previousData) => previousData,
+  })
+}
+
+// ===========================
+// Evaluation Metrics Dataset Hook
+// ===========================
+
+interface EvaluationMetricItem {
+  row: EvaluationMetricRow & {
+    retrieved_contexts: string[]
+    reference_contexts: string[]
+  }
+  row_idx: number
+}
+
+interface EvaluationMetricsResponse {
+  rows: EvaluationMetricItem[]
+  total: number
+  offset: number
+  length: number
+  hasMore: boolean
+}
+
+export function useEvaluationMetrics(offset: number = 0, length: number = 20, search?: string) {
+  return useQuery({
+    queryKey: ["evaluation-metrics", offset, length, search],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        offset: String(offset),
+        length: String(length),
+      })
+
+      if (search) {
+        params.set("search", search)
+      }
+
+      const res = await fetch(`/api/evaluation-metrics?${params}`)
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch evaluation metrics")
+      }
+
+      return res.json() as Promise<EvaluationMetricsResponse>
+    },
+    // Keep previous data while fetching new page
+    placeholderData: (previousData) => previousData,
   })
 }
