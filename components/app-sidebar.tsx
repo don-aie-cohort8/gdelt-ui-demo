@@ -37,22 +37,22 @@ const items = [
     icon: Database,
   },
   {
-    title: "Sources",
+    title: "Sources Dataset",
     url: "/sources",
     icon: FileText,
   },
   {
-    title: "Test Set",
+    title: "Test Set Dataset",
     url: "/testset",
     icon: TestTube,
   },
   {
-    title: "Eval Inputs",
+    title: "Eval Inputs Dataset",
     url: "/evaluation-inputs",
     icon: Database,
   },
   {
-    title: "Eval Metrics",
+    title: "Eval Metrics Dataset",
     url: "/evaluation-metrics",
     icon: TrendingUp,
   },
