@@ -42,7 +42,7 @@ const items = [
     icon: FileText,
   },
   {
-    title: "Test Set Dataset",
+    title: "Golden Testset Dataset",
     url: "/testset",
     icon: TestTube,
   },
